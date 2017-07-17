@@ -29,6 +29,7 @@ public class SpringTutApplication {
                     Account account = accountRepository.save(new Account( a, "password"));
                     bookmarkRepository.save(new Bookmark(account,"http://bookmark.com/1/" + a, "A description"));
                     bookmarkRepository.save(new Bookmark(account,"http://bookmark.com/2/" + a, "A description"));
+                    bookmarkRepository.flush();
                 });
     }
 

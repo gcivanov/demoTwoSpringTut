@@ -1,5 +1,7 @@
 package com.example.springTut.springTut.RestControllers;
 
+import com.example.springTut.springTut.Exceptions.UserNotFoundException;
+import com.example.springTut.springTut.bookmarks.Account;
 import com.example.springTut.springTut.bookmarks.AccountRepository;
 import com.example.springTut.springTut.bookmarks.Bookmark;
 import com.example.springTut.springTut.bookmarks.BookmarkRepository;
@@ -7,10 +9,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
+import org.springframework.web.util.UriComponentsBuilder;
 
 import java.net.URI;
 import java.util.Collection;
-import java.util.Optional;
 
 /**
  * Created by root on 7/16/2017.
@@ -19,25 +21,34 @@ import java.util.Optional;
 
 @RestController
 @RequestMapping("/{userId}/bookmarks")
-public class BookRestController {
+public class BookmarksRestController {
 
     private final AccountRepository accountRepository;
     private final BookmarkRepository bookmarkRepository;
 
     @Autowired
-    public BookRestController(AccountRepository accountRepository, BookmarkRepository bookmarkRepository) {
+    public BookmarksRestController(AccountRepository accountRepository, BookmarkRepository bookmarkRepository) {
         this.accountRepository = accountRepository;
         this.bookmarkRepository = bookmarkRepository;
     }
 
     @RequestMapping(method = RequestMethod.GET)
-    Optional<Bookmark> readBookmarks(@PathVariable String userId) {
+    Collection<Bookmark> readBookmarks(@PathVariable String userId) {
         this.validateUser(userId);
         return this.bookmarkRepository.findByAccountUsername(userId);
     }
 
-    @RequestMapping(method = RequestMethod.POST)
-    ResponseEntity<?> add(@PathVariable String userId, @RequestBody Bookmark input) {
+    /*
+    @RequestMapping(method = RequestMethod.POST, path = "/add")
+    ResponseEntity<?> addUser(@PathVariable String userId, @RequestHeader(value = "password") String password) {
+        Account addedAccount = this.accountRepository.save( new Account(userId, password) );
+        this.accountRepository.flush();
+        System.out.println(" we are in add user method! +userId:" + userId + " password:" + password);
+        return ResponseEntity.notFound().build();
+    }
+    */
+        @RequestMapping(method = RequestMethod.POST)
+        ResponseEntity<?> add(@PathVariable String userId, @RequestBody Bookmark input) {
         this.validateUser(userId);
 
         return this.accountRepository.findByUsername(userId)
@@ -49,8 +60,15 @@ public class BookRestController {
                 .orElse(ResponseEntity.noContent().build());
     }
 
+    @RequestMapping(method = RequestMethod.GET, value = "/{bookmarkId}")
+    Bookmark readBookmark(@PathVariable String userId, @PathVariable Long bookmarkId) {
+        this.validateUser(userId);
+        return this.bookmarkRepository.findById(bookmarkId).orElse(new Bookmark(null,"",""));
+    }
+
     private void validateUser(String userId) {
-        this.accountRepository.findByUsername(userId);
-//                .orElse( () -> new Exception(userId) );
+        System.out.println( "! userId:" + userId + " find:" +this.accountRepository.findByUsername(userId));
+        this.accountRepository.findByUsername(userId)
+                .orElseThrow(() -> new UserNotFoundException(userId));
     }
 }
